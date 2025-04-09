@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QRKD Simulation with Test Cases</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0e0e0e;
+      color: #fff;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #111;
+    }
+    .controls {
+      margin-top: 1em;
+    }
+    label, select {
+      font-size: 1rem;
+      margin: 0 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>QRKD Simulation - Test Scenarios</h1>
+  <canvas id="qrkdCanvas" width="900" height="400"></canvas>
+  <div class="controls">
+    <label for="testSelect">Select Test Case:</label>
+    <select id="testSelect">
+      <option value="low_noise">Low Noise Environment</option>
+      <option value="high_noise">High Noise Interference</option>
+      <option value="lossy_channel">Photon Lossy Channel</option>
+      <option value="perfect_sync">Perfect Phase Sync</option>
+      <option value="weak_feedback">Weak Feedback Efficiency</option>
+    </select>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("qrkdCanvas");
+    const ctx = canvas.getContext("2d");
+    const testSelect = document.getElementById("testSelect");
+
+    let noiseLevel = 0.05;
+    let feedbackEfficiency = 1.0;
+    let photonLossRate = 0.05;
+
+    const photons = [];
+
+    function createPhoton() {
+      return {
+        x: 50,
+        y: 200 + Math.random() * 100 - 50,
+        stage: 0,
+        radius: 10,
+        color: "blue",
+        alive: Math.random() > photonLossRate
+      };
+    }
+
+    function drawPhoton(p) {
+      if (!p.alive) return;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
+
+    function drawStages() {
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = "#666";
+      for (let i = 200; i < 800; i += 200) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 400);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#aaa";
+      ctx.fillText("Resonance Encoding", 60, 30);
+      ctx.fillText("Weak Measurement", 260, 30);
+      ctx.fillText("Adaptive Phase Corr.", 460, 30);
+      ctx.fillText("Key Extraction", 700, 30);
+    }
+
+    function updatePhoton(p) {
+      if (!p.alive) return;
+      p.x += 2;
+      // Apply noise
+      if (Math.random() < noiseLevel) {
+        p.y += Math.random() * 10 - 5;
+      }
+      if (p.x > 200 && p.stage === 0) {
+        p.color = "yellow";
+        p.stage = 1;
+      } else if (p.x > 400 && p.stage === 1) {
+        if (Math.random() < feedbackEfficiency) {
+          p.color = "lime";
+        } else {
+          p.color = "red";
+        }
+        p.stage = 2;
+      } else if (p.x > 600 && p.stage === 2) {
+        p.color = p.color === "lime" ? "cyan" : "gray";
+        p.stage = 3;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawStages();
+      photons.forEach(p => {
+        updatePhoton(p);
+        drawPhoton(p);
+      });
+    }
+
+    setInterval(() => {
+      if (Math.random() < 0.2) photons.push(createPhoton());
+      draw();
+    }, 30);
+
+    testSelect.addEventListener("change", () => {
+      const testCase = testSelect.value;
+      switch (testCase) {
+        case "low_noise":
+          noiseLevel = 0.01;
+          feedbackEfficiency = 1.0;
+          photonLossRate = 0.01;
+          break;
+        case "high_noise":
+          noiseLevel = 0.2;
+          feedbackEfficiency = 0.8;
+          photonLossRate = 0.1;
+          break;
+        case "lossy_channel":
+          noiseLevel = 0.05;
+          feedbackEfficiency = 0.9;
+          photonLossRate = 0.3;
+          break;
+        case "perfect_sync":
+          noiseLevel = 0.0;
+          feedbackEfficiency = 1.0;
+          photonLossRate = 0.0;
+          break;
+        case "weak_feedback":
+          noiseLevel = 0.05;
+          feedbackEfficiency = 0.3;
+          photonLossRate = 0.05;
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
